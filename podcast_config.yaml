@@ -1,0 +1,186 @@
+# AI Podcast Intelligence System - Local JupyterLab Configuration
+system:
+  database_path: "data/ai_podcast_intelligence.db"
+  log_level: "INFO"
+  days_lookback: 7
+  max_episodes_per_podcast: 5
+  reports_directory: "reports"
+  logs_directory: "logs"
+
+cost_limits:
+  daily_max_usd: 5.00
+  weekly_max_usd: 20.00
+  alert_threshold: 0.8
+
+email:
+  enabled: false
+  smtp_server: "smtp.gmail.com"
+  smtp_port: 587
+
+reports:
+  generate_html: true
+  generate_markdown: true
+  max_episodes_in_report: 15
+  include_cost_breakdown: true
+  auto_open_report: true
+
+podcasts:
+  "Practical AI":
+    rss_url: "https://changelog.com/practicalai/feed"
+    priority: "high"
+    focus: "technical_practical"
+    active: true
+    description: "Technical AI implementations and practical applications"
+    estimated_episodes_per_week: 1
+    estimated_length_minutes: 45
+    
+  "Last Week in AI":
+    rss_url: "https://lastweekin.ai/feed/"
+    priority: "high"
+    focus: "weekly_news_summary" 
+    active: true
+    description: "Weekly AI news and industry updates"
+    estimated_episodes_per_week: 1
+    estimated_length_minutes: 30
+    
+  "The AI Podcast":
+    rss_url: "https://blogs.nvidia.com/ai-podcast/feed/"
+    priority: "medium"
+    focus: "industry_interviews"
+    active: true
+    description: "Industry interviews and expert discussions"
+    estimated_episodes_per_week: 1
+    estimated_length_minutes: 25
+
+  "Eye on AI":
+    rss_url: "https://www.eye-on.ai/feed/"
+    active: true
+    priority: "medium"
+    focus: "business_strategy"
+    estimated_episodes_per_week: 1
+
+  "AI Today Podcast":
+    rss_url: "https://www.cognilytica.com/feed/"
+    active: true
+    priority: "medium"
+    focus: "business_strategy"
+    estimated_episodes_per_week: 2
+
+  "The AI Show":
+    rss_url: "https://channel9.msdn.com/Shows/AI-Show/feed"
+    active: true
+    priority: "medium"
+    focus: "technical_deep_dive"
+    estimated_episodes_per_week: 1
+
+  "MIT AI Podcast":
+    rss_url: "https://rss.art19.com/artificial-intelligence"
+    active: true
+    priority: "medium"
+    focus: "academic_research"
+    estimated_episodes_per_week: 1
+    
+  "Lenny's Podcast":
+    rss_url: "https://api.substack.com/feed/podcast/10845.rss"
+    active: true
+    priority: "high"
+    focus: "business_strategy"
+    estimated_episodes_per_week: 1
+    
+  "How I AI Podcast":
+    rss_url: "https://anchor.fm/s/1035b1568/podcast/rss"
+    active: true
+    priority: "high"
+    focus: "general"
+    estimated_episodes_per_week: 1
+
+focus_areas:
+  technical_practical:
+    description: "Technical implementations, tools, coding practices"
+    extraction_emphasis: "Focus on code examples, technical tools, implementation details, and actionable developer insights"
+    
+  weekly_news_summary:
+    description: "Weekly news roundups and industry updates"
+    extraction_emphasis: "Focus on news developments, industry announcements, trend analysis, and weekly highlights"
+    
+  industry_interviews:
+    description: "Expert interviews and professional discussions"
+    extraction_emphasis: "Focus on expert opinions, career insights, company strategies, and professional perspectives"
+
+  practical_ai:
+    extraction_emphasis: "Focus on practical implementation insights and real-world AI applications"
+  
+  news_analysis:
+    extraction_emphasis: "Focus on industry trends, market movements, and strategic implications"
+  
+  technical_deep_dive:
+    extraction_emphasis: "Focus on technical breakthroughs, research findings, and architectural insights"
+  
+  thought_leadership:
+    extraction_emphasis: "Focus on strategic vision, philosophical implications, and future predictions"
+  
+  business_strategy:
+    extraction_emphasis: "Focus on business implications, competitive dynamics, and investment opportunities"
+  
+  academic_research:
+    extraction_emphasis: "Focus on research methodologies, scientific findings, and theoretical advances"
+
+
+# Priority-based processing controls
+priority_settings:
+  high:
+    max_processing_cost_per_episode: 0.10  # Allow higher cost for important podcasts
+    quality_threshold: 8                   # Expect high-quality analysis
+    max_retries: 3                        # More retry attempts
+    
+  medium:
+    max_processing_cost_per_episode: 0.06  # Moderate cost allowance
+    quality_threshold: 6                   # Good quality expected
+    max_retries: 2                        # Standard retries
+    
+  low:
+    max_processing_cost_per_episode: 0.03  # Budget-friendly processing
+    quality_threshold: 4                   # Lower quality acceptable
+    max_retries: 1                        # Minimal retries
+
+# Automation and maintenance settings
+automation:
+  enable_scheduling: false                 # Set to true when you want scheduled runs
+  schedule:
+    run_day: "sunday"                     # Weekly processing day
+    run_time: "08:00"                     # Morning processing time
+    timezone: "UTC"                       # Adjust to your timezone
+  
+  maintenance:
+    backup_database: true                 # Create database backups
+    cleanup_old_reports: true             # Remove reports older than retention period
+    report_retention_days: 30             # Keep reports for 30 days
+    log_retention_days: 14                # Keep logs for 2 weeks
+    
+  notifications:
+    enable_email: false                   # Future: email reports
+    enable_slack: false                   # Future: Slack notifications
+    high_impact_threshold: 8              # Notify for episodes with score >= 8
+
+# Enhanced cost management
+cost_management:
+  daily_max_usd: 2.0
+  weekly_max_usd: 10.0
+  monthly_max_usd: 35.0
+  
+  # Cost allocation by priority (percentage of budget)
+  priority_allocation:
+    high: 0.6      # 60% of budget for high-priority podcasts
+    medium: 0.3    # 30% for medium-priority  
+    low: 0.1       # 10% for low-priority
+    
+  # Alert thresholds
+  alert_at_percentage: 0.8  # Alert when 80% of budget used
+  stop_at_percentage: 0.95  # Stop processing at 95% of budget
+
+# Quality control settings
+quality_control:
+  min_confidence_score: 0.3              # Skip episodes below this confidence
+  require_manual_review_below: 0.5       # Flag low-confidence episodes
+  auto_retry_failed_parsing: true        # Retry JSON parsing failures
+  max_episode_age_days: 14               # Don't process very old episodes
