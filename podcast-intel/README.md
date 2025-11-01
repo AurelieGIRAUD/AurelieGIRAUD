@@ -10,12 +10,12 @@ Systematically extract decision-relevant intelligence from podcast content strea
 4. **Composable Stages** - Independent components that work together
 5. **Optimize for 95% Case** - Automate common patterns brilliantly
 
-## Current Status: Step 1 - Claude Client ✅
+## Current Status: Step 3 - RSS Fetcher ✅
 
 We're building incrementally. Right now you can:
-- Extract intelligence from podcast transcripts using Claude
-- Track costs per extraction
-- Get structured 15-field intelligence output
+- Extract intelligence from podcast transcripts using Claude (Step 1)
+- Store episodes and intelligence in SQLite database (Step 2)
+- Fetch episodes from RSS feeds with metadata extraction (Step 3)
 
 ## Setup
 
@@ -31,9 +31,16 @@ We're building incrementally. Right now you can:
    # Edit .env and add your ANTHROPIC_API_KEY
    ```
 
-3. **Test the Claude client:**
+3. **Test the components:**
    ```bash
+   # Test Claude client (costs ~$0.02-0.05)
    python -m tests.test_claude_client
+
+   # Test database layer (free, uses local SQLite)
+   python -m tests.test_database
+
+   # Test RSS fetcher (free, fetches real feeds)
+   python -m tests.test_rss_fetcher
    ```
 
 ## What's Extracted
@@ -52,18 +59,27 @@ The Claude client extracts 15 structured intelligence fields:
 ```
 podcast-intel/
 ├── config/
-│   └── prompts.py          # Claude prompt templates (the crown jewels)
+│   ├── prompts.py          # Claude prompt templates (the crown jewels)
+│   └── settings.py         # Configuration loader
+├── models/
+│   ├── episode.py          # Episode data model
+│   └── intelligence.py     # Intelligence data model
+├── repositories/
+│   ├── database.py         # Database connection manager
+│   ├── episode_repo.py     # Episode CRUD operations
+│   └── intelligence_repo.py # Intelligence CRUD operations
 ├── services/
-│   └── claude_client.py    # API client for intelligence extraction
+│   ├── claude_client.py    # API client for intelligence extraction
+│   └── rss_fetcher.py      # RSS feed parser
 └── tests/
-    └── test_claude_client.py  # Integration test with sample data
+    ├── test_claude_client.py  # Claude API integration test
+    ├── test_database.py       # Database layer tests
+    └── test_rss_fetcher.py    # RSS fetcher tests
 ```
 
 ## Next Steps
 
-2. Build database layer (repositories)
-3. Create RSS fetcher service
-4. Compose the pipeline (commands)
+4. Compose the pipeline (commands) - wire everything together
 5. Add email delivery (Resend integration)
 6. Set up weekly cron scheduling
 

@@ -1,0 +1,71 @@
+# Podcast Intelligence CLI Configuration
+# Simplified from original notebook - following "Optimize for 95% case" principle
+
+system:
+  database_path: "data/podcast_intel.db"
+  log_level: "INFO"
+  days_lookback: 7
+  max_episodes_per_podcast: 5
+  reports_directory: "reports"
+  logs_directory: "logs"
+
+cost_limits:
+  daily_max_usd: 5.00
+  weekly_max_usd: 20.00
+  alert_threshold: 0.8  # Alert at 80% of budget
+
+email:
+  enabled: true
+  # API key should be in .env file: RESEND_API_KEY=re_...
+  from: "podcast-intel@yourdomain.com"
+  to: "you@yourdomain.com"
+
+podcasts:
+  "Practical AI":
+    rss_url: "https://changelog.com/practicalai/feed"
+    focus: "technical_practical"
+    active: true
+    description: "Technical AI implementations and practical applications"
+
+  "Last Week in AI":
+    rss_url: "https://lastweekin.ai/feed/"
+    focus: "weekly_news_summary"
+    active: true
+    description: "Weekly AI news and industry updates"
+
+  "The AI Podcast":
+    rss_url: "https://blogs.nvidia.com/ai-podcast/feed/"
+    focus: "industry_interviews"
+    active: true
+    description: "Industry interviews and expert discussions"
+
+  "Eye on AI":
+    rss_url: "https://www.eye-on.ai/feed/"
+    focus: "business_strategy"
+    active: true
+    description: "Business strategy and AI applications"
+
+  "Lenny's Podcast":
+    rss_url: "https://api.substack.com/feed/podcast/10845.rss"
+    focus: "business_strategy"
+    active: true
+    description: "Product and business insights"
+
+focus_areas:
+  technical_practical:
+    extraction_emphasis: "Focus on code examples, technical tools, implementation details, and actionable developer insights"
+
+  weekly_news_summary:
+    extraction_emphasis: "Focus on news developments, industry announcements, trend analysis, and weekly highlights"
+
+  industry_interviews:
+    extraction_emphasis: "Focus on expert opinions, career insights, company strategies, and professional perspectives"
+
+  business_strategy:
+    extraction_emphasis: "Focus on business implications, competitive dynamics, and investment opportunities"
+
+  technical_deep_dive:
+    extraction_emphasis: "Focus on technical breakthroughs, research findings, and architectural insights"
+
+  academic_research:
+    extraction_emphasis: "Focus on research methodologies, scientific findings, and theoretical advances"
