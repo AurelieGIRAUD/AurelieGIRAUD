@@ -124,14 +124,16 @@ class Settings:
         """
         email = self.raw_config.get('email', {})
 
-        # Get API key from environment (preferred) or config
+        # Get API key and email addresses from environment (preferred) or config
         resend_api_key = os.getenv('RESEND_API_KEY') or email.get('resend_api_key')
+        from_email = os.getenv('EMAIL_FROM') or email.get('from', '')
+        to_email = os.getenv('EMAIL_TO') or email.get('to', '')
 
         return EmailConfig(
             enabled=email.get('enabled', False),
             resend_api_key=resend_api_key,
-            from_email=email.get('from', ''),
-            to_email=email.get('to', '')
+            from_email=from_email,
+            to_email=to_email
         )
 
     def _load_podcasts(self) -> List[PodcastConfig]:

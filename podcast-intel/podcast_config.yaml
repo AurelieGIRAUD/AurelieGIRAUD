@@ -16,10 +16,10 @@ cost_limits:
 
 email:
   enabled: true
-  # API key should be in .env file: RESEND_API_KEY=re_...
-  # From address must be verified in Resend dashboard
-  from: "onboarding@resend.dev"  # Use this for testing, then change to your domain
-  to: "myemail@gmail.com"   # Change this to your email address
+  # Email configuration should be in .env file:
+  # RESEND_API_KEY=re_...
+  # EMAIL_FROM=your-sender@yourdomain.com  (must be verified in Resend dashboard)
+  # EMAIL_TO=your-email@gmail.com
 
 podcasts:
   "Practical AI":
