@@ -7,8 +7,11 @@ requests>=2.31.0
 # Environment variable management
 python-dotenv>=1.0.0
 
-# RSS feed parsing (for future steps)
+# RSS feed parsing
 feedparser>=6.0.10
 
-# CLI framework (for future steps)
+# CLI framework
 click>=8.1.0
+
+# YAML configuration
+pyyaml>=6.0.0
