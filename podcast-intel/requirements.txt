@@ -1,0 +1,14 @@
+# Core dependencies for podcast intelligence CLI
+# Clean, minimal - following "Boring Pipelines" principle
+
+# HTTP client for API calls
+requests>=2.31.0
+
+# Environment variable management
+python-dotenv>=1.0.0
+
+# RSS feed parsing (for future steps)
+feedparser>=6.0.10
+
+# CLI framework (for future steps)
+click>=8.1.0
