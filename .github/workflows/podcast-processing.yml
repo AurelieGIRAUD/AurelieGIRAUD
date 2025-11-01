@@ -1,0 +1,68 @@
+name: Podcast Intelligence Processing
+
+on:
+  schedule:
+    # Run every Monday at 8:00 AM UTC (adjust timezone as needed)
+    # Cron format: minute hour day-of-month month day-of-week
+    - cron: '0 8 * * 1'
+
+  # Allow manual triggering from GitHub Actions UI
+  workflow_dispatch:
+    inputs:
+      send_email:
+        description: 'Send email report after processing'
+        required: false
+        type: boolean
+        default: true
+
+jobs:
+  process-podcasts:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Install dependencies
+      run: |
+        cd podcast-intel
+        pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Create .env file with secrets
+      run: |
+        cd podcast-intel
+        cat > .env << EOF
+        ANTHROPIC_API_KEY=${{ secrets.ANTHROPIC_API_KEY }}
+        RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
+        EMAIL_FROM=${{ secrets.EMAIL_FROM }}
+        EMAIL_TO=${{ secrets.EMAIL_TO }}
+        EOF
+
+    - name: Process podcasts
+      run: |
+        cd podcast-intel
+        python cli.py process --send-email
+      env:
+        ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+        EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        EMAIL_TO: ${{ secrets.EMAIL_TO }}
+
+    - name: Upload processing logs (on failure)
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: processing-logs
+        path: podcast-intel/logs/
+        retention-days: 7
+
+    - name: Notify on failure
+      if: failure()
+      run: |
+        echo "::error::Podcast processing failed. Check logs in artifacts."
