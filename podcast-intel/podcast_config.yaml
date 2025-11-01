@@ -51,6 +51,36 @@ podcasts:
     focus: "business_strategy"
     active: true
     description: "Product and business insights"
+    
+  "No Priors":
+    rss_url: "https://feeds.megaphone.fm/nopriors"
+    focus: "weekly_news_summary"
+    active: true
+    description: "Weekly AI news and industry updates"
+
+  "Cognitive Revolution":
+    rss_url: "https://feeds.megaphone.fm/RINTP3108857801"
+    focus: "weekly_news_summary"
+    active: true
+    description: "Biweekly AI news and industry updates"
+
+  "Google DeepMind - The Podcast":
+    rss_url: "https://feeds.simplecast.com/JT6pbPkg"
+    focus: "technical_practical"
+    active: true
+    description: "Technical AI implementations and practical applications behind the scenes of the world-leading research lab"
+
+  "The TWIML AI Podcast":
+    rss_url: "https://feeds.megaphone.fm/MLN2155636147"
+    focus: "technical_practical"
+    active: true
+    description: "Technical AI implementations and practical applications behind the scenes of the world-leading research lab"
+
+  "This Day in AI":
+    rss_url: "https://feeds.transistor.fm/this-day-in-ai"
+    focus: "industry_interviews"
+    active: true
+    description: "Just two guys with enough technical knowledge to be dangerous, sharing their unexceptional yet entertaining experiences with AI tools and technology"
 
 focus_areas:
   technical_practical:
