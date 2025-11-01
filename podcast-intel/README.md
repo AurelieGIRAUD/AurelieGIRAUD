@@ -10,15 +10,16 @@ Systematically extract decision-relevant intelligence from podcast content strea
 4. **Composable Stages** - Independent components that work together
 5. **Optimize for 95% Case** - Automate common patterns brilliantly
 
-## Current Status: Step 4 - Complete Pipeline ✅
+## Current Status: Step 5 - Email Delivery ✅
 
-**The system is now fully functional end-to-end!**
+**Complete podcast intelligence system with email delivery!**
 
 You can:
 - Process podcast episodes automatically (fetch → extract → store)
 - Track costs and enforce budget limits
+- Generate beautiful HTML intelligence reports
+- Receive reports via email (Resend API)
 - Run the complete pipeline with one command
-- Test individual components independently
 
 ## Setup
 
@@ -28,16 +29,34 @@ You can:
    pip install -r requirements.txt
    ```
 
-2. **Configure API key:**
+2. **Configure API keys:**
    ```bash
    cp .env.example .env
-   # Edit .env and add your ANTHROPIC_API_KEY
+   # Edit .env and add your keys:
+   #   ANTHROPIC_API_KEY=sk-ant-...  (required)
+   #   RESEND_API_KEY=re_...         (optional, for email)
    ```
 
-3. **Run the system:**
+   **Get API keys:**
+   - Anthropic (required): https://console.anthropic.com/
+   - Resend (optional): https://resend.com/api-keys
+
+3. **Configure email (optional):**
+   Edit `podcast_config.yaml`:
+   ```yaml
+   email:
+     enabled: true
+     from: "onboarding@resend.dev"      # For testing
+     to: "your-email@example.com"       # Your email
+   ```
+
+4. **Run the system:**
    ```bash
-   # Process recent podcast episodes (the main command!)
+   # Process recent podcast episodes
    python cli.py process
+
+   # Process and send email report
+   python cli.py process --send-email
 
    # Dry run to see what would be processed
    python cli.py process --dry-run
@@ -46,7 +65,7 @@ You can:
    python cli.py --help
    ```
 
-4. **Test individual components (optional):**
+5. **Test individual components (optional):**
    ```bash
    # Test Claude client (costs ~$0.02-0.05)
    python -m tests.test_claude_client
@@ -107,11 +126,34 @@ podcast-intel/
 # Process all active podcasts from the last 7 days
 python cli.py process
 
+# Process and email report to your inbox
+python cli.py process --send-email
+
 # See what would be processed without actually doing it
 python cli.py process --dry-run
 
 # Use a custom configuration file
 python cli.py process --config my_config.yaml
+```
+
+## Email Report Features
+
+When you use `--send-email`, you'll receive a beautiful HTML email with:
+
+- **Executive Summary** - High-level stats (episodes analyzed, high-impact count, costs)
+- **Intelligence Briefings** - Sorted by importance score (highest first)
+- **For each episode:**
+  - Importance badge (color-coded by score)
+  - Headline takeaway
+  - Executive summary
+  - Strategic implications
+  - Actionable insights
+  - Bottom line
+  - Link to episode
+
+**Sample email subject:**
+```
+🎙️ Podcast Intelligence Report - November 01, 2025
 ```
 
 ## What Happens When You Run `process`
@@ -125,11 +167,12 @@ python cli.py process --config my_config.yaml
 7. ✅ **Logs everything** to console and file
 8. ✅ **Shows summary** with stats and costs
 
-## Next Steps
+## Next Steps (Optional Enhancements)
 
-5. Add email delivery (Resend integration) - deliver reports to inbox
-6. Add report generation (HTML/Markdown) - create readable summaries
-7. Set up weekly cron scheduling - automate the workflow
+6. Set up weekly cron scheduling - automate the workflow
+7. Add webhook notifications for failures
+8. Create dashboard for viewing intelligence over time
+9. Add support for custom extraction templates per podcast
 
 ## Cost Tracking
 

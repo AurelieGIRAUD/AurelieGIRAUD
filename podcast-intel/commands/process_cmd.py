@@ -7,10 +7,13 @@ Fetches episodes, extracts intelligence, saves to database.
 import os
 import logging
 import click
+from datetime import datetime
 from dotenv import load_dotenv
 
 from config.settings import load_config
 from services.processor import PodcastProcessor, CostLimitExceeded
+from services.email_service import EmailService, EmailDeliveryError
+from reports.report_generator import ReportGenerator
 from utils.logging import setup_logging
 
 
@@ -28,7 +31,12 @@ logger = logging.getLogger(__name__)
     is_flag=True,
     help='Show what would be processed without actually processing'
 )
-def process(config: str, dry_run: bool):
+@click.option(
+    '--send-email/--no-email',
+    default=False,
+    help='Send report via email after processing'
+)
+def process(config: str, dry_run: bool, send_email: bool):
     """
     Process recent podcast episodes and extract intelligence.
 
@@ -39,8 +47,9 @@ def process(config: str, dry_run: bool):
     4. Tracks costs and enforces limits
 
     Example:
-        podcast-intel process
-        podcast-intel process --dry-run
+        podcast-intel process                    # Process episodes
+        podcast-intel process --send-email       # Process and email report
+        podcast-intel process --dry-run          # Preview mode
         podcast-intel process --config custom_config.yaml
     """
     # Load environment variables
@@ -122,6 +131,60 @@ def process(config: str, dry_run: bool):
                 click.echo(f"   • {error}")
 
         click.echo()
+
+        # Send email if requested
+        if send_email and stats.episodes_processed > 0:
+            click.echo("\n📧 Sending email report...")
+
+            try:
+                # Check email configuration
+                if not settings.email.enabled:
+                    click.echo("⚠️  Email is disabled in configuration", err=True)
+                    click.echo("   Set email.enabled: true in podcast_config.yaml\n", err=True)
+                    return
+
+                if not settings.email.resend_api_key:
+                    click.echo("❌ RESEND_API_KEY not found in environment", err=True)
+                    click.echo("\nAdd to your .env file:", err=True)
+                    click.echo("  RESEND_API_KEY=re_...\n", err=True)
+                    return
+
+                # Initialize email service
+                email_service = EmailService(
+                    api_key=settings.email.resend_api_key,
+                    from_email=settings.email.from_email,
+                    to_email=settings.email.to_email
+                )
+
+                # Generate report
+                report_generator = ReportGenerator(
+                    intelligence_repo=processor.intelligence_repo,
+                    episode_repo=processor.episode_repo
+                )
+
+                html_report = report_generator.generate_weekly_report(
+                    days_back=settings.system.days_lookback
+                )
+
+                # Send email
+                subject = f"🎙️ Podcast Intelligence Report - {datetime.now().strftime('%B %d, %Y')}"
+                email_id = email_service.send_report(subject, html_report)
+
+                click.echo(f"✓ Email sent successfully (ID: {email_id})\n")
+
+            except EmailDeliveryError as e:
+                click.echo(f"❌ Email delivery failed: {e}", err=True)
+                click.echo("\nPossible causes:", err=True)
+                click.echo("  - Invalid Resend API key", err=True)
+                click.echo("  - Invalid from/to email addresses", err=True)
+                click.echo("  - Network connectivity issues\n", err=True)
+
+            except Exception as e:
+                click.echo(f"❌ Email generation failed: {e}", err=True)
+                logger.exception("Email generation failed")
+
+        elif send_email and stats.episodes_processed == 0:
+            click.echo("\n⚠️  No episodes processed, skipping email\n")
 
     except CostLimitExceeded as e:
         click.echo(f"\n❌ Cost limit exceeded: {e}", err=True)

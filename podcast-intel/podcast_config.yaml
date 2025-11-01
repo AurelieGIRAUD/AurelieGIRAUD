@@ -17,8 +17,9 @@ cost_limits:
 email:
   enabled: true
   # API key should be in .env file: RESEND_API_KEY=re_...
-  from: "podcast-intel@yourdomain.com"
-  to: "you@yourdomain.com"
+  # From address must be verified in Resend dashboard
+  from: "onboarding@resend.dev"  # Use this for testing, then change to your domain
+  to: "your-email@example.com"   # Change this to your email address
 
 podcasts:
   "Practical AI":
