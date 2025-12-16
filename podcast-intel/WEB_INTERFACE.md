@@ -36,6 +36,44 @@ The interface will automatically open in your browser at `http://localhost:8501`
 
 No additional configuration needed! The web interface reads from the same `podcast_config.yaml` file used by the CLI.
 
+## Authentication (Optional but Recommended)
+
+The web interface includes built-in authentication to protect your configuration and data.
+
+### Local Development (Optional)
+For local use without authentication, just run the app - it will show a warning but allow access.
+
+### Enable Authentication Locally
+
+1. **Generate password hash:**
+   ```bash
+   python generate_password_hash.py
+   ```
+
+2. **Create secrets file:**
+   ```bash
+   cp .streamlit/secrets.toml.example .streamlit/secrets.toml
+   ```
+
+3. **Edit `.streamlit/secrets.toml`:**
+   - Replace the example password hash with yours
+   - Update email and name
+   - Change the cookie key to a random string
+
+4. **Restart the app** - Login page will appear
+
+### Deploy with Authentication
+
+For production deployment to Streamlit Cloud with authentication:
+
+👉 **See [STREAMLIT_CLOUD_DEPLOYMENT.md](STREAMLIT_CLOUD_DEPLOYMENT.md) for complete guide**
+
+Quick summary:
+1. Generate password hash
+2. Configure secrets in Streamlit Cloud dashboard
+3. Deploy from GitHub
+4. Access your protected app!
+
 ## Features
 
 ### 📊 Dashboard

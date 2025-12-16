@@ -6,6 +6,7 @@ A Streamlit-based web UI for managing podcast configuration and viewing intellig
 """
 
 import streamlit as st
+import streamlit_authenticator as stauth
 import yaml
 import os
 import sys
@@ -616,8 +617,77 @@ def process_page():
             st.error(f"❌ Processing failed: {e}")
 
 
+def load_auth_config():
+    """Load authentication configuration from secrets."""
+    try:
+        # Try to load from Streamlit secrets (for Streamlit Cloud or local .streamlit/secrets.toml)
+        if "credentials" in st.secrets:
+            config = {
+                "credentials": st.secrets["credentials"].to_dict(),
+                "cookie": st.secrets.get("cookie", {
+                    "name": "podcast_intel_auth",
+                    "key": "default_key_change_this",
+                    "expiry_days": 30
+                }).to_dict() if "cookie" in st.secrets else {
+                    "name": "podcast_intel_auth",
+                    "key": "default_key_change_this",
+                    "expiry_days": 30
+                }
+            }
+            return config
+        else:
+            return None
+    except Exception as e:
+        st.error(f"Authentication configuration error: {e}")
+        return None
+
+
+def check_authentication():
+    """
+    Check user authentication.
+
+    Returns:
+        bool: True if authenticated, False otherwise
+    """
+    auth_config = load_auth_config()
+
+    # If no auth config, show warning and allow access (for local development)
+    if not auth_config:
+        st.sidebar.warning("⚠️ No authentication configured")
+        st.sidebar.info("Create .streamlit/secrets.toml from secrets.toml.example to enable authentication")
+        return True
+
+    # Create authenticator
+    authenticator = stauth.Authenticate(
+        auth_config['credentials'],
+        auth_config['cookie']['name'],
+        auth_config['cookie']['key'],
+        auth_config['cookie']['expiry_days']
+    )
+
+    # Show login form
+    name, authentication_status, username = authenticator.login('Login', 'main')
+
+    if authentication_status == False:
+        st.error('Username/password is incorrect')
+        return False
+    elif authentication_status == None:
+        st.warning('Please enter your username and password')
+        return False
+
+    # If authenticated, show logout button in sidebar
+    st.sidebar.success(f'Welcome {name}')
+    authenticator.logout('Logout', 'sidebar')
+
+    return True
+
+
 def main():
     """Main application."""
+
+    # Check authentication first
+    if not check_authentication():
+        st.stop()
 
     # Sidebar navigation
     st.sidebar.title("🎙️ Podcast Intel")
