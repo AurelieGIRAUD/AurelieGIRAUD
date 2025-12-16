@@ -666,7 +666,14 @@ def check_authentication():
     )
 
     # Show login form
-    name, authentication_status, username = authenticator.login(location='main')
+    try:
+        authenticator.login()
+    except:
+        pass
+
+    name = st.session_state.get("name")
+    authentication_status = st.session_state.get("authentication_status")
+    username = st.session_state.get("username")
 
     if authentication_status == False:
         st.error('Username/password is incorrect')
@@ -677,7 +684,10 @@ def check_authentication():
 
     # If authenticated, show logout button in sidebar
     st.sidebar.success(f'Welcome {name}')
-    authenticator.logout(location='sidebar')
+    try:
+        authenticator.logout()
+    except:
+        pass
 
     return True
 
