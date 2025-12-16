@@ -79,8 +79,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# Configuration file path
-CONFIG_FILE = "podcast_config.yaml"
+# Configuration file path - use absolute path for Streamlit Cloud compatibility
+CONFIG_FILE = Path(__file__).parent / "podcast_config.yaml"
 
 
 def load_yaml_config():
@@ -98,7 +98,7 @@ def save_yaml_config(config_data):
 def initialize_database():
     """Initialize database connection and repositories."""
     try:
-        settings = load_config(CONFIG_FILE)
+        settings = load_config(str(CONFIG_FILE))
         db = Database(settings.system.database_path)
         db.initialize_schema()
 
@@ -666,7 +666,14 @@ def check_authentication():
     )
 
     # Show login form
-    name, authentication_status, username = authenticator.login('Login', 'main')
+    try:
+        authenticator.login()
+    except:
+        pass
+
+    name = st.session_state.get("name")
+    authentication_status = st.session_state.get("authentication_status")
+    username = st.session_state.get("username")
 
     if authentication_status == False:
         st.error('Username/password is incorrect')
@@ -677,7 +684,10 @@ def check_authentication():
 
     # If authenticated, show logout button in sidebar
     st.sidebar.success(f'Welcome {name}')
-    authenticator.logout('Logout', 'sidebar')
+    try:
+        authenticator.logout()
+    except:
+        pass
 
     return True
 
