@@ -21,6 +21,32 @@ You can:
 - Receive reports via email (Resend API)
 - Run the complete pipeline with one command
 
+## Two Ways to Use
+
+### 🖥️ Web Interface (Recommended for Configuration)
+```bash
+cd podcast-intel
+pip install -r requirements.txt
+streamlit run web_app.py
+```
+Opens a browser interface at `http://localhost:8501` with:
+- Visual podcast management
+- Configuration forms
+- Intelligence browser
+- Cost monitoring dashboard
+- One-click processing
+
+📖 See [WEB_INTERFACE.md](WEB_INTERFACE.md) for full documentation
+
+### ⌨️ Command Line (Best for Automation)
+```bash
+cd podcast-intel
+pip install -r requirements.txt
+python cli.py process
+```
+
+---
+
 ## Setup
 
 1. **Install dependencies:**
@@ -169,9 +195,9 @@ When you use `--send-email`, you'll receive a beautiful HTML email with:
 
 ## Next Steps (Optional Enhancements)
 
-6. Set up weekly cron scheduling - automate the workflow
-7. Add webhook notifications for failures
-8. Create dashboard for viewing intelligence over time
+6. ✅ **Web Interface** - Visual configuration and intelligence browser (see [WEB_INTERFACE.md](WEB_INTERFACE.md))
+7. Set up weekly cron scheduling - automate the workflow
+8. Add webhook notifications for failures
 9. Add support for custom extraction templates per podcast
 
 ## Cost Tracking
