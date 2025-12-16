@@ -79,8 +79,8 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# Configuration file path
-CONFIG_FILE = "podcast_config.yaml"
+# Configuration file path - use absolute path for Streamlit Cloud compatibility
+CONFIG_FILE = Path(__file__).parent / "podcast_config.yaml"
 
 
 def load_yaml_config():
@@ -98,7 +98,7 @@ def save_yaml_config(config_data):
 def initialize_database():
     """Initialize database connection and repositories."""
     try:
-        settings = load_config(CONFIG_FILE)
+        settings = load_config(str(CONFIG_FILE))
         db = Database(settings.system.database_path)
         db.initialize_schema()
 
