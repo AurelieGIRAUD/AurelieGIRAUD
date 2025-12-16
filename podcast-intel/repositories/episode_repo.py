@@ -202,6 +202,30 @@ class EpisodeRepository:
             count = cursor.fetchone()[0]
             return count > 0
 
+    def count_all(self) -> int:
+        """
+        Count total episodes in database.
+
+        Returns:
+            Total number of episodes
+        """
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM episodes')
+            return cursor.fetchone()[0]
+
+    def count_processed(self) -> int:
+        """
+        Count processed episodes in database.
+
+        Returns:
+            Number of processed episodes
+        """
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('SELECT COUNT(*) FROM episodes WHERE processed = 1')
+            return cursor.fetchone()[0]
+
     def _row_to_episode(self, row) -> Episode:
         """
         Convert database row to Episode object.
