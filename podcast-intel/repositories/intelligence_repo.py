@@ -163,6 +163,36 @@ class IntelligenceRepository:
             rows = cursor.fetchall()
             return [self._row_to_intelligence(row) for row in rows]
 
+    def delete_within_lookback(self, days_back: int) -> int:
+        """
+        Delete intelligence records for episodes published within the lookback window.
+
+        Used only by --force-reprocess so episodes are treated as new and
+        the full extraction pipeline runs again.
+
+        Args:
+            days_back: Number of days to look back from now
+
+        Returns:
+            Number of intelligence records deleted
+        """
+        from datetime import timedelta
+        cutoff_date = datetime.now() - timedelta(days=days_back)
+
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                DELETE FROM intelligence
+                WHERE episode_id IN (
+                    SELECT id FROM episodes WHERE pub_date >= ?
+                )
+            ''', (cutoff_date.isoformat(),))
+            count = cursor.rowcount
+            conn.commit()
+
+        logger.info(f"Deleted {count} intelligence records (lookback: {days_back} days)")
+        return count
+
     def get_total_cost(self, days_back: Optional[int] = None) -> float:
         """
         Calculate total processing cost.

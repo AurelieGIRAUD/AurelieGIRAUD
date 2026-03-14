@@ -36,7 +36,13 @@ logger = logging.getLogger(__name__)
     default=False,
     help='Send report via email after processing'
 )
-def process(config: str, dry_run: bool, send_email: bool):
+@click.option(
+    '--force-reprocess',
+    is_flag=True,
+    default=False,
+    help='[Testing only] Clear intelligence records and reprocess all episodes in the lookback window'
+)
+def process(config: str, dry_run: bool, send_email: bool, force_reprocess: bool):
     """
     Process recent podcast episodes and extract intelligence.
 
@@ -51,6 +57,7 @@ def process(config: str, dry_run: bool, send_email: bool):
         podcast-intel process --send-email       # Process and email report
         podcast-intel process --dry-run          # Preview mode
         podcast-intel process --config custom_config.yaml
+        podcast-intel process --force-reprocess   # [Testing only] reprocess all recent episodes
     """
     # Load environment variables
     load_dotenv()
@@ -92,6 +99,9 @@ def process(config: str, dry_run: bool, send_email: bool):
     click.echo(f"   Daily budget: ${settings.costs.daily_max_usd:.2f}")
     click.echo(f"   Weekly budget: ${settings.costs.weekly_max_usd:.2f}")
 
+    if force_reprocess:
+        click.echo("\n⚠️  FORCE REPROCESS MODE — existing intelligence will be cleared and re-extracted")
+
     if dry_run:
         click.echo("\n🔍 DRY RUN MODE - No actual processing will occur")
         click.echo("\nPodcasts that would be processed:")
@@ -111,7 +121,7 @@ def process(config: str, dry_run: bool, send_email: bool):
     try:
         click.echo("\n🚀 Starting processing...\n")
 
-        stats = processor.process_all_podcasts()
+        stats = processor.process_all_podcasts(force_reprocess=force_reprocess)
 
         # Display results
         click.echo("\n" + "=" * 80)

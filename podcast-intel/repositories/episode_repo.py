@@ -226,6 +226,35 @@ class EpisodeRepository:
             cursor.execute('SELECT COUNT(*) FROM episodes WHERE processed = 1')
             return cursor.fetchone()[0]
 
+    def reset_processed_within_lookback(self, days_back: int) -> int:
+        """
+        Mark episodes published within the lookback window as unprocessed.
+
+        Used only by --force-reprocess to allow re-running the full pipeline
+        on episodes that were already processed.
+
+        Args:
+            days_back: Number of days to look back from now
+
+        Returns:
+            Number of episodes reset
+        """
+        from datetime import timedelta
+        cutoff_date = datetime.now() - timedelta(days=days_back)
+
+        with self.db.get_connection() as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                UPDATE episodes
+                SET processed = 0, updated_at = CURRENT_TIMESTAMP
+                WHERE processed = 1 AND pub_date >= ?
+            ''', (cutoff_date.isoformat(),))
+            count = cursor.rowcount
+            conn.commit()
+
+        logger.info(f"Reset {count} episodes to unprocessed (lookback: {days_back} days)")
+        return count
+
     def _row_to_episode(self, row) -> Episode:
         """
         Convert database row to Episode object.

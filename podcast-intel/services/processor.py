@@ -92,7 +92,7 @@ class PodcastProcessor:
 
         logger.info("Podcast processor initialized")
 
-    def process_all_podcasts(self) -> ProcessingStats:
+    def process_all_podcasts(self, force_reprocess: bool = False) -> ProcessingStats:
         """
         Process all active podcasts.
 
@@ -100,6 +100,11 @@ class PodcastProcessor:
         - Simple orchestration flow
         - Intelligence in Claude prompts
         - Fail gracefully on errors
+
+        Args:
+            force_reprocess: If True, clear existing intelligence and processed flags
+                for episodes within the lookback window before processing.
+                Only for testing — normal scheduled runs never set this.
 
         Returns:
             ProcessingStats with results
@@ -110,6 +115,13 @@ class PodcastProcessor:
         logger.info("=" * 80)
         logger.info("Starting podcast processing run")
         logger.info("=" * 80)
+
+        if force_reprocess:
+            days = self.config.system.days_lookback
+            logger.warning(f"--force-reprocess: clearing processed state for last {days} days")
+            deleted = self.intelligence_repo.delete_within_lookback(days)
+            reset = self.episode_repo.reset_processed_within_lookback(days)
+            logger.warning(f"--force-reprocess: deleted {deleted} intelligence records, reset {reset} episodes")
 
         stats = ProcessingStats()
         start_time = datetime.now()
