@@ -10,7 +10,6 @@ import logging
 from typing import Optional
 
 import requests
-from pydub import AudioSegment
 
 
 logger = logging.getLogger(__name__)
@@ -26,14 +25,16 @@ class TranscriptionService:
     Streams and transcribes podcast audio using OpenAI Whisper.
 
     Design principle: "Boring Pipelines"
-    - Single responsibility: fetch audio, compress if needed, transcribe
+    - Single responsibility: fetch audio, split if needed, transcribe
     - No files written to disk at any point — all processing is in memory
+    - No ffmpeg or audio decoding — raw byte chunking only
     - Fail clearly with TranscriptionError; let the caller decide on fallback
     """
 
     WHISPER_API_URL = "https://api.openai.com/v1/audio/transcriptions"
     WHISPER_MODEL = "whisper-1"
     MAX_FILE_BYTES = 25 * 1024 * 1024  # 25 MB — Whisper API hard limit
+    CHUNK_SIZE = 24 * 1024 * 1024      # 24 MB — safely under the limit
 
     def __init__(self, api_key: str):
         """
@@ -55,7 +56,11 @@ class TranscriptionService:
 
     def transcribe(self, audio_url: str) -> str:
         """
-        Stream, optionally compress, and transcribe audio from a URL.
+        Stream, optionally split, and transcribe audio from a URL.
+
+        If the audio is under 25 MB it is sent as a single Whisper request.
+        If the audio is over 25 MB it is split into 24 MB byte chunks, each
+        chunk is transcribed separately, and the results are joined with a space.
 
         Args:
             audio_url: Direct URL to the podcast audio file
@@ -64,18 +69,37 @@ class TranscriptionService:
             Transcript as a plain text string
 
         Raises:
-            TranscriptionError: If download, compression, or transcription fails
+            TranscriptionError: If download or transcription fails
         """
         audio_data = self._stream_audio(audio_url)
 
-        if len(audio_data) > self.MAX_FILE_BYTES:
-            logger.info(
-                f"Audio is {len(audio_data) / 1024 / 1024:.1f} MB — "
-                f"compressing to mono 16 kHz MP3 to meet Whisper 25 MB limit"
-            )
-            audio_data = self._compress_audio(audio_data)
+        if len(audio_data) <= self.MAX_FILE_BYTES:
+            return self._call_whisper(audio_data)
 
-        return self._call_whisper(audio_data)
+        chunks = self._split_into_chunks(audio_data)
+        logger.info(
+            f"Audio is {len(audio_data) / 1024 / 1024:.1f} MB — "
+            f"splitting into {len(chunks)} chunks for Whisper transcription"
+        )
+        transcripts = [self._call_whisper(chunk) for chunk in chunks]
+        return " ".join(transcripts)
+
+    def _split_into_chunks(self, audio_data: bytes) -> list:
+        """
+        Split raw audio bytes into chunks of at most CHUNK_SIZE bytes.
+
+        No decoding, no re-encoding, no ffmpeg — pure byte splitting.
+
+        Args:
+            audio_data: Raw audio bytes
+
+        Returns:
+            List of byte chunks, each at most CHUNK_SIZE bytes
+        """
+        return [
+            audio_data[i:i + self.CHUNK_SIZE]
+            for i in range(0, len(audio_data), self.CHUNK_SIZE)
+        ]
 
     def _stream_audio(self, audio_url: str) -> bytes:
         """
@@ -109,38 +133,6 @@ class TranscriptionService:
             raise TranscriptionError(
                 f"Failed to download audio from {audio_url}: {str(e)}"
             )
-
-    def _compress_audio(self, audio_data: bytes) -> bytes:
-        """
-        Compress audio to mono 16 kHz MP3 in memory.
-
-        Used only when the raw file exceeds the Whisper 25 MB limit.
-
-        Args:
-            audio_data: Raw audio bytes in any pydub-supported format
-
-        Returns:
-            Compressed MP3 bytes
-
-        Raises:
-            TranscriptionError: If compression fails
-        """
-        try:
-            import static_ffmpeg
-            static_ffmpeg.add_paths()
-        except Exception:
-            pass  # Fall back to system PATH if static-ffmpeg cannot download binaries
-
-        try:
-            audio = AudioSegment.from_file(io.BytesIO(audio_data))
-            audio = audio.set_channels(1).set_frame_rate(16000)
-
-            output = io.BytesIO()
-            audio.export(output, format="mp3")
-            return output.getvalue()
-
-        except Exception as e:
-            raise TranscriptionError(f"Audio compression failed: {str(e)}")
 
     def _call_whisper(self, audio_data: bytes) -> str:
         """

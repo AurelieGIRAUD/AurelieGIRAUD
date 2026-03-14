@@ -212,90 +212,79 @@ class TestTranscriptionErrors:
 
 
 # ---------------------------------------------------------------------------
-# Compression path (audio > 25 MB)
+# Chunking path (audio > 25 MB)
 # ---------------------------------------------------------------------------
 
-class TestCompressionPath:
+class TestChunkingPath:
 
-    @patch("static_ffmpeg.add_paths")
     @patch("services.transcription_service.requests.post")
     @patch("services.transcription_service.requests.get")
-    @patch("services.transcription_service.AudioSegment")
-    def test_compression_triggered_for_large_audio(self, mock_audio_cls, mock_get, mock_post, mock_add_paths):
-        """Files over 25 MB must go through _compress_audio before being sent."""
-        large_audio = _make_audio_bytes(26.0)
-        mock_get.return_value = _mock_stream_response(large_audio)
-        mock_post.return_value = _mock_whisper_response("compressed transcript")
-
-        # Build a realistic AudioSegment mock chain
-        mock_segment = MagicMock()
-        mock_segment.set_channels.return_value = mock_segment
-        mock_segment.set_frame_rate.return_value = mock_segment
-        mock_audio_cls.from_file.return_value = mock_segment
-
-        def fake_export(buf, format):
-            buf.write(b"fake_compressed_mp3_bytes")
-
-        mock_segment.export.side_effect = fake_export
-
-        svc = TranscriptionService(api_key="sk-test")
-        result = svc.transcribe("https://example.com/large.mp3")
-
-        assert result == "compressed transcript"
-        # Verify the full compression pipeline was invoked
-        mock_audio_cls.from_file.assert_called_once()
-        mock_segment.set_channels.assert_called_once_with(1)
-        mock_segment.set_frame_rate.assert_called_once_with(16000)
-        mock_segment.export.assert_called_once()
-        # Verify the call used mp3 format
-        _, export_kwargs = mock_segment.export.call_args
-        assert export_kwargs.get("format") == "mp3" or mock_segment.export.call_args.args[1] == "mp3" or \
-               mock_segment.export.call_args.kwargs.get("format") == "mp3"
-
-    @patch("static_ffmpeg.add_paths")
-    @patch("services.transcription_service.requests.post")
-    @patch("services.transcription_service.requests.get")
-    @patch("services.transcription_service.AudioSegment")
-    def test_compression_skipped_for_small_audio(self, mock_audio_cls, mock_get, mock_post, mock_add_paths):
-        """Files under 25 MB must NOT go through _compress_audio."""
-        small_audio = _make_audio_bytes(1.0)
-        mock_get.return_value = _mock_stream_response(small_audio)
-        mock_post.return_value = _mock_whisper_response("direct transcript")
+    def test_small_file_sends_single_request(self, mock_get, mock_post):
+        """Files under 25 MB must be sent in a single Whisper request."""
+        mock_get.return_value = _mock_stream_response(_make_audio_bytes(1.0))
+        mock_post.return_value = _mock_whisper_response("single transcript")
 
         svc = TranscriptionService(api_key="sk-test")
         result = svc.transcribe("https://example.com/small.mp3")
 
-        assert result == "direct transcript"
-        mock_audio_cls.from_file.assert_not_called()
+        assert result == "single transcript"
+        assert mock_post.call_count == 1
 
-    @patch("static_ffmpeg.add_paths")
     @patch("services.transcription_service.requests.post")
     @patch("services.transcription_service.requests.get")
-    @patch("services.transcription_service.AudioSegment")
-    def test_compression_failure_raises_transcription_error(
-        self, mock_audio_cls, mock_get, mock_post, mock_add_paths
-    ):
-        """If pydub fails during compression, a TranscriptionError must be raised."""
-        large_audio = _make_audio_bytes(26.0)
-        mock_get.return_value = _mock_stream_response(large_audio)
-        mock_audio_cls.from_file.side_effect = Exception("ffmpeg not found")
-
-        svc = TranscriptionService(api_key="sk-test")
-        with pytest.raises(TranscriptionError, match="compression failed"):
-            svc.transcribe("https://example.com/large.mp3")
-
-    @patch("static_ffmpeg.add_paths")
-    @patch("services.transcription_service.requests.post")
-    @patch("services.transcription_service.requests.get")
-    @patch("services.transcription_service.AudioSegment")
-    def test_exactly_at_limit_does_not_compress(self, mock_audio_cls, mock_get, mock_post, mock_add_paths):
-        """A file of exactly 25 MB must not trigger compression (limit is strictly >)."""
-        exactly_25mb = _make_audio_bytes(25.0)
-        mock_get.return_value = _mock_stream_response(exactly_25mb)
+    def test_exactly_at_limit_sends_single_request(self, mock_get, mock_post):
+        """A file of exactly 25 MB must not be split (limit is strictly >)."""
+        mock_get.return_value = _mock_stream_response(_make_audio_bytes(25.0))
         mock_post.return_value = _mock_whisper_response("at-limit transcript")
 
         svc = TranscriptionService(api_key="sk-test")
         result = svc.transcribe("https://example.com/exact.mp3")
 
         assert result == "at-limit transcript"
-        mock_audio_cls.from_file.assert_not_called()
+        assert mock_post.call_count == 1
+
+    @patch("services.transcription_service.requests.post")
+    @patch("services.transcription_service.requests.get")
+    def test_large_file_sends_multiple_requests(self, mock_get, mock_post):
+        """A 48 MB file should be split into 2 chunks → 2 Whisper requests."""
+        large_audio = _make_audio_bytes(48.0)
+        mock_get.return_value = _mock_stream_response(large_audio)
+        mock_post.return_value = _mock_whisper_response("chunk transcript")
+
+        svc = TranscriptionService(api_key="sk-test")
+        svc.transcribe("https://example.com/large.mp3")
+
+        # 48 MB / 24 MB chunks = 2 requests
+        assert mock_post.call_count == 2
+
+    @patch("services.transcription_service.requests.post")
+    @patch("services.transcription_service.requests.get")
+    def test_large_file_transcripts_concatenated_in_order(self, mock_get, mock_post):
+        """Chunk transcripts must be joined with a space in chunk order."""
+        large_audio = _make_audio_bytes(48.0)
+        mock_get.return_value = _mock_stream_response(large_audio)
+
+        # Return different text for each chunk call
+        mock_post.side_effect = [
+            _mock_whisper_response("first chunk"),
+            _mock_whisper_response("second chunk"),
+        ]
+
+        svc = TranscriptionService(api_key="sk-test")
+        result = svc.transcribe("https://example.com/large.mp3")
+
+        assert result == "first chunk second chunk"
+
+    @patch("services.transcription_service.requests.post")
+    @patch("services.transcription_service.requests.get")
+    def test_72mb_file_sends_three_requests(self, mock_get, mock_post):
+        """A 72 MB file should be split into 3 chunks → 3 Whisper requests."""
+        large_audio = _make_audio_bytes(72.0)
+        mock_get.return_value = _mock_stream_response(large_audio)
+        mock_post.return_value = _mock_whisper_response("chunk")
+
+        svc = TranscriptionService(api_key="sk-test")
+        svc.transcribe("https://example.com/huge.mp3")
+
+        # 72 MB / 24 MB chunks = 3 requests
+        assert mock_post.call_count == 3
