@@ -217,10 +217,11 @@ class TestTranscriptionErrors:
 
 class TestCompressionPath:
 
+    @patch("static_ffmpeg.add_paths")
     @patch("services.transcription_service.requests.post")
     @patch("services.transcription_service.requests.get")
     @patch("services.transcription_service.AudioSegment")
-    def test_compression_triggered_for_large_audio(self, mock_audio_cls, mock_get, mock_post):
+    def test_compression_triggered_for_large_audio(self, mock_audio_cls, mock_get, mock_post, mock_add_paths):
         """Files over 25 MB must go through _compress_audio before being sent."""
         large_audio = _make_audio_bytes(26.0)
         mock_get.return_value = _mock_stream_response(large_audio)
@@ -251,10 +252,11 @@ class TestCompressionPath:
         assert export_kwargs.get("format") == "mp3" or mock_segment.export.call_args.args[1] == "mp3" or \
                mock_segment.export.call_args.kwargs.get("format") == "mp3"
 
+    @patch("static_ffmpeg.add_paths")
     @patch("services.transcription_service.requests.post")
     @patch("services.transcription_service.requests.get")
     @patch("services.transcription_service.AudioSegment")
-    def test_compression_skipped_for_small_audio(self, mock_audio_cls, mock_get, mock_post):
+    def test_compression_skipped_for_small_audio(self, mock_audio_cls, mock_get, mock_post, mock_add_paths):
         """Files under 25 MB must NOT go through _compress_audio."""
         small_audio = _make_audio_bytes(1.0)
         mock_get.return_value = _mock_stream_response(small_audio)
@@ -266,11 +268,12 @@ class TestCompressionPath:
         assert result == "direct transcript"
         mock_audio_cls.from_file.assert_not_called()
 
+    @patch("static_ffmpeg.add_paths")
     @patch("services.transcription_service.requests.post")
     @patch("services.transcription_service.requests.get")
     @patch("services.transcription_service.AudioSegment")
     def test_compression_failure_raises_transcription_error(
-        self, mock_audio_cls, mock_get, mock_post
+        self, mock_audio_cls, mock_get, mock_post, mock_add_paths
     ):
         """If pydub fails during compression, a TranscriptionError must be raised."""
         large_audio = _make_audio_bytes(26.0)
@@ -281,10 +284,11 @@ class TestCompressionPath:
         with pytest.raises(TranscriptionError, match="compression failed"):
             svc.transcribe("https://example.com/large.mp3")
 
+    @patch("static_ffmpeg.add_paths")
     @patch("services.transcription_service.requests.post")
     @patch("services.transcription_service.requests.get")
     @patch("services.transcription_service.AudioSegment")
-    def test_exactly_at_limit_does_not_compress(self, mock_audio_cls, mock_get, mock_post):
+    def test_exactly_at_limit_does_not_compress(self, mock_audio_cls, mock_get, mock_post, mock_add_paths):
         """A file of exactly 25 MB must not trigger compression (limit is strictly >)."""
         exactly_25mb = _make_audio_bytes(25.0)
         mock_get.return_value = _mock_stream_response(exactly_25mb)

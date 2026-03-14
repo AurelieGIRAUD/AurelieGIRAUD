@@ -126,6 +126,12 @@ class TranscriptionService:
             TranscriptionError: If compression fails
         """
         try:
+            import static_ffmpeg
+            static_ffmpeg.add_paths()
+        except Exception:
+            pass  # Fall back to system PATH if static-ffmpeg cannot download binaries
+
+        try:
             audio = AudioSegment.from_file(io.BytesIO(audio_data))
             audio = audio.set_channels(1).set_frame_rate(16000)
 
