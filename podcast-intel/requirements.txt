@@ -19,6 +19,7 @@ pyyaml>=6.0.0
 # Audio transcription via OpenAI Whisper
 openai>=1.0.0
 pydub>=0.25.1
+static-ffmpeg>=2.1  # Ships pre-built ffmpeg/ffprobe binaries; makes pydub work without system ffmpeg
 
 # Web interface (optional - for web_app.py)
 streamlit>=1.28.0
