@@ -16,6 +16,10 @@ click>=8.1.0
 # YAML configuration
 pyyaml>=6.0.0
 
+# Audio transcription via OpenAI Whisper
+openai>=1.0.0
+pydub>=0.25.1
+
 # Web interface (optional - for web_app.py)
 streamlit>=1.28.0
 pandas>=2.0.0

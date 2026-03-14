@@ -40,7 +40,7 @@ class ClaudeClient:
     API_URL = "https://api.anthropic.com/v1/messages"
     API_VERSION = "2023-06-01"
     MODEL = "claude-sonnet-4-20250514"
-    MAX_TOKENS = 3500
+    MAX_TOKENS = 7000
     TEMPERATURE = 0.2
 
     # Pricing (as of model version) - USD per million tokens
