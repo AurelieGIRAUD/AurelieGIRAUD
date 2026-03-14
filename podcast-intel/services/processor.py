@@ -85,7 +85,7 @@ class PodcastProcessor:
         )
 
         # Whisper transcription is optional — only active when OPENAI_API_KEY is set
-        openai_api_key = os.getenv('OPENAI_API_KEY', '')
+        openai_api_key = os.getenv('OPENAI_WHISPER_API', '')
         self.transcription_service = (
             TranscriptionService(openai_api_key) if openai_api_key else None
         )
