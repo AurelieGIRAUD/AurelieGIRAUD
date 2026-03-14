@@ -5,6 +5,7 @@ Coordinates all services to process podcast episodes end-to-end.
 """
 
 import logging
+import os
 from typing import List, Dict, Optional
 from datetime import datetime
 
@@ -17,6 +18,7 @@ from repositories.intelligence_repo import IntelligenceRepository
 from services.claude_client import ClaudeClient, ClaudeAPIError
 from services.rss_fetcher import RSSFetcher, RSSFetchError
 from services.cost_calculator import CostCalculator, CostLimitExceeded
+from services.transcription_service import TranscriptionService, TranscriptionError
 
 
 logger = logging.getLogger(__name__)
@@ -80,6 +82,12 @@ class PodcastProcessor:
             daily_max=config.costs.daily_max_usd,
             weekly_max=config.costs.weekly_max_usd,
             alert_threshold=config.costs.alert_threshold
+        )
+
+        # Whisper transcription is optional — only active when OPENAI_API_KEY is set
+        openai_api_key = os.getenv('OPENAI_WHISPER_API', '')
+        self.transcription_service = (
+            TranscriptionService(openai_api_key) if openai_api_key else None
         )
 
         logger.info("Podcast processor initialized")
@@ -240,10 +248,17 @@ class PodcastProcessor:
         # Get extraction emphasis for this focus area
         extraction_emphasis = self.config.get_extraction_emphasis(podcast.focus)
 
-        # Extract intelligence using Claude
-        # Note: We'd need actual transcript here, for now using description as placeholder
-        # In production, you'd fetch transcript from audio_url or have it stored
-        transcript = episode.description  # Placeholder - in real system, fetch actual transcript
+        # Transcribe the real audio via Whisper when available; fall back to the RSS
+        # description if no OpenAI key is configured or if transcription fails
+        transcript = episode.description
+        if self.transcription_service and episode.audio_url:
+            try:
+                transcript = self.transcription_service.transcribe(episode.audio_url)
+            except TranscriptionError as e:
+                logger.warning(
+                    f"Whisper transcription failed for '{episode.title}' — "
+                    f"falling back to RSS description. Reason: {e}"
+                )
 
         intelligence_data, cost, processing_time = self.claude_client.extract_intelligence(
             transcript=transcript,

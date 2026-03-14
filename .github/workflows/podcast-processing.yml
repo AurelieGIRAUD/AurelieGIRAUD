@@ -18,6 +18,7 @@ on:
 jobs:
   process-podcasts:
     runs-on: ubuntu-latest
+    timeout-minutes: 90
 
     steps:
     - name: Checkout repository
@@ -42,6 +43,7 @@ jobs:
         RESEND_API_KEY=${{ secrets.RESEND_API_KEY }}
         EMAIL_FROM=${{ secrets.EMAIL_FROM }}
         EMAIL_TO=${{ secrets.EMAIL_TO }}
+        OPENAI_WHISPER_API=${{ secrets.OPENAI_WHISPER_API }}
         EOF
 
     - name: Process podcasts
@@ -53,6 +55,7 @@ jobs:
         RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
         EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
         EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        OPENAI_WHISPER_API: ${{ secrets.OPENAI_WHISPER_API }}
 
     - name: Upload processing logs (on failure)
       if: failure()
